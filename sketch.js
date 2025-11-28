@@ -13,13 +13,9 @@ function gotPoses(poses){
 }
 
 function setup(){
-    createCanvas(640, 480);
-
+    createCanvas(windowWidth, windowHeight);
 
     video = createCapture(VIDEO, {flipped: true});
-
-
-    video.size(640, 480);
     video.hide();
 
     console.log("Video is created successfullyyy... ");
@@ -31,12 +27,43 @@ function setup(){
     console.log(connections);
 }
 
+function windowResized(){
+    resizeCanvas(windowWidth, windowHeight);
+}
+
 function draw(){
-    image(video, 0, 0);
+    // Calculate aspect ratio to fit video without stretching
+    let videoAspect = video.width / video.height;
+    let canvasAspect = width / height;
+    
+    let drawWidth, drawHeight, x, y;
+    
+    if(canvasAspect > videoAspect) {
+        // Canvas is wider than video
+        drawHeight = height;
+        drawWidth = height * videoAspect;
+        x = (width - drawWidth) / 2;
+        y = 0;
+    } else {
+        // Canvas is taller than video
+        drawWidth = width;
+        drawHeight = width / videoAspect;
+        x = 0;
+        y = (height - drawHeight) / 2;
+    }
+    
+    background(0);
+    image(video, x, y, drawWidth, drawHeight);
+    
+    // Scale keypoints to match the drawn video size
+    let scaleX = drawWidth / video.width;
+    let scaleY = drawHeight / video.height;
 
     if(results.length > 0){
         let result = results[0];
         
+        push();
+        translate(x, y);
 
         // connection line
         stroke(255, 255, 0);
@@ -49,7 +76,7 @@ function draw(){
             let to = result.keypoints[connection[1]];
             
             if(from.confidence > 0.1 && to.confidence > 0.1){
-                line(from.x, from.y, to.x, to.y);
+                line(from.x * scaleX, from.y * scaleY, to.x * scaleX, to.y * scaleY);
             }
         }
         
@@ -63,13 +90,15 @@ function draw(){
 
             if(i === 0){
                 fill(255, 0, 0); // red nose dott
-                circle(keypoint.x, keypoint.y, 15);
+                circle(keypoint.x * scaleX, keypoint.y * scaleY, 15);
             } else {
                 fill(0, 255, 0); // all the points left
                 if(keypoint.confidence > 0.1){ 
-                    circle(keypoint.x, keypoint.y, 12);
+                    circle(keypoint.x * scaleX, keypoint.y * scaleY, 12);
                 }
             }
         }
+        
+        pop();
     }
 }
